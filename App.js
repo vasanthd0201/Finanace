@@ -1,20 +1,99 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import Login from './screens/auth/login';
+import Otp from './screens/auth/otp';
+import BasicInfo from './screens/auth/basicinfo';
+import ProfessionalInfo from './screens/auth/professionalinfo';
+import KycVerification from './screens/auth/kycverification';
+import KycUpload from './screens/auth/kycupload';
+import profileanalysis from './screens/auth/profileanalysis';
+import LoanApproved from './screens/auth/loanapproved';
+import EmiCalculator from './screens/auth/emicalculator';
+import FinalSteps from './screens/auth/finalsteps';
+import SuccessScreen from './screens/auth/sucessscreen';
+import ThankYou from './screens/auth/thankyou';
+import Dashboard from './screens/dashboard';
+
+
+const Stack = createStackNavigator();
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <NavigationContainer>
+      <Stack.Navigator initialRouteName="login">
+        <Stack.Screen 
+          name="login" 
+          component={Login} 
+          options={{ headerShown: false }} 
+        />
+        <Stack.Screen 
+          name="Otp" 
+          component={Otp} 
+          options={{ headerShown: false }} 
+        />
+
+        <Stack.Screen 
+          name="BasicInfo" 
+          component={BasicInfo} 
+          options={{ headerShown: false }} 
+        />
+        <Stack.Screen 
+          name="ProfessionalInfo" 
+          component={ProfessionalInfo} 
+          options={{ headerShown: false }} 
+        />
+        <Stack.Screen 
+          name="KycVerification" 
+          component={KycVerification} 
+          options={{ headerShown: false }} 
+        />
+        <Stack.Screen 
+          name="KycUpload" 
+          component={KycUpload} 
+          options={{ headerShown: false }} 
+        />  
+
+       <Stack.Screen 
+           name="ProfileAnalysis" 
+            component={profileanalysis} 
+              options={{ headerShown: false }} 
+        />
+
+
+        <Stack.Screen 
+          name="LoanApproved" 
+          component={LoanApproved} 
+          options={{ headerShown: false }} 
+        />
+        <Stack.Screen 
+          name="EmiCalculator" 
+          component={EmiCalculator} 
+          options={{ headerShown: false }} 
+        />
+        <Stack.Screen 
+          name="FinalSteps" 
+          component={FinalSteps} 
+          options={{ headerShown: false }} 
+        />
+        <Stack.Screen 
+          name="SuccessScreen" 
+          component={SuccessScreen} 
+          options={{ headerShown: false }} 
+        />
+        <Stack.Screen 
+          name="ThankYou" 
+          component={ThankYou} 
+          options={{ headerShown: false }} 
+        />
+
+        <Stack.Screen 
+          name="Dashboard" 
+          component={Dashboard} 
+          options={{ headerShown: false }} 
+        />
+
+        
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
