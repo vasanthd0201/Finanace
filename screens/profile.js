@@ -695,6 +695,7 @@ const styles = StyleSheet.create({
   buttonGroup: {
     flexDirection: "row",
     marginTop: 20,
+    marginBottom: 30,
   },
   saveButton: {
     flex: 1,
