@@ -1,50 +1,90 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableWithoutFeedback,
+  Keyboard,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function LoanApproved({ navigation }) {
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Congratulations! You're Approved</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <KeyboardAvoidingView
+          style={styles.container}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <Text style={styles.title}>Congratulations! You're Approved</Text>
 
-      <View style={styles.card}>
-        <Text style={styles.label}>₹50,000</Text>
-        <Text style={styles.caption}>Approved Amount</Text>
+          <View style={styles.card}>
+            <Text style={styles.label}>₹50,000</Text>
+            <Text style={styles.caption}>Approved Amount</Text>
 
-        <Text style={styles.label}>12 Months</Text>
-        <Text style={styles.caption}>Flexible Tenure</Text>
+            <Text style={styles.label}>12 Months</Text>
+            <Text style={styles.caption}>Flexible Tenure</Text>
 
-        <Text style={styles.label}>₹4,500</Text>
-        <Text style={styles.caption}>Monthly EMI</Text>
-      </View>
+            <Text style={styles.label}>₹4,500</Text>
+            <Text style={styles.caption}>Monthly EMI</Text>
+          </View>
 
-      <TouchableOpacity
-        style={styles.button}
-        onPress={() => navigation.navigate("EmiCalculator")}
-      >
-        <Text style={styles.buttonText}>Adjust Loan</Text>
-      </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => navigation.navigate("EmiCalculator")}
+          >
+            <Text style={styles.buttonText}>Adjust Loan</Text>
+          </TouchableOpacity>
 
-      <TouchableOpacity
-        style={[styles.button, { backgroundColor: "#4CAF50" }]}
-        onPress={() => navigation.navigate("FinalSteps")}
-      >
-        <Text style={styles.buttonText}>Proceed</Text>
-      </TouchableOpacity>
-    </View>
+          <TouchableOpacity
+            style={[styles.button, { backgroundColor: "#4CAF50" }]}
+            onPress={() => navigation.navigate("FinalSteps")}
+          >
+            <Text style={styles.buttonText}>Proceed</Text>
+          </TouchableOpacity>
+        </KeyboardAvoidingView>
+      </TouchableWithoutFeedback>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 25, backgroundColor: "#fff" },
-  title: { fontSize: 24, fontWeight: "700", marginBottom: 25, marginTop: 25 },
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
+  container: {
+    flex: 1,
+    padding: 25,
+    backgroundColor: "#fff",
+    justifyContent: "flex-start",
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "700",
+    marginBottom: 25,
+    marginTop: 5,
+    textAlign: "center",
+  },
   card: {
     backgroundColor: "#f5f5f5",
     padding: 25,
     borderRadius: 12,
     marginBottom: 30,
   },
-  label: { fontSize: 26, fontWeight: "700", textAlign: "center" },
-  caption: { textAlign: "center", color: "#666", marginBottom: 15 },
+  label: {
+    fontSize: 26,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  caption: {
+    textAlign: "center",
+    color: "#666",
+    marginBottom: 15,
+  },
   button: {
     backgroundColor: "#001F54",
     padding: 15,
@@ -52,5 +92,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 15,
   },
-  buttonText: { color: "#fff", fontSize: 18, fontWeight: "600" },
+  buttonText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "600",
+  },
 });

@@ -1,52 +1,74 @@
 import React, { useEffect } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableWithoutFeedback,
+  Keyboard,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function ThankYou({ navigation }) {
   useEffect(() => {
     const timer = setTimeout(() => {
-      navigation.navigate("Dashboard");  // Navigate after 5 seconds
+      navigation.navigate("Dashboard");
     }, 5000);
 
     return () => clearTimeout(timer);
   }, [navigation]);
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.bigCheck}>✓</Text>
-      <Text style={styles.title}>Thank You</Text>
-      <Text style={styles.sub}>Your Financial Partner</Text>
-      <Text style={styles.small}>
-        Experience the future of instant lending—simple, secure, and designed for you.
-      </Text>
-    </View>
+    <SafeAreaView style={styles.safeArea}>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <KeyboardAvoidingView
+          style={styles.container}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <Text style={styles.bigCheck}>✓</Text>
+          <Text style={styles.title}>Thank You</Text>
+          <Text style={styles.sub}>Your Financial Partner</Text>
+
+          <Text style={styles.small}>
+            Experience the future of instant lending—simple, secure, and designed for you.
+          </Text>
+        </KeyboardAvoidingView>
+      </TouchableWithoutFeedback>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    alignItems: "center", 
-    justifyContent: "center", 
-    padding: 25, 
-    backgroundColor: "#fff" 
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#fff",
   },
-  bigCheck: { 
-    fontSize: 70, 
-    color: "green", 
-    marginBottom: 20 
+  container: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 25,
   },
-  title: { 
-    fontSize: 32, 
-    fontWeight: "700" 
+  bigCheck: {
+    fontSize: 70,
+    color: "green",
+    marginBottom: 20,
   },
-  sub: { 
-    fontSize: 18, 
-    marginTop: 10, 
-    fontWeight: "500" 
+  title: {
+    fontSize: 32,
+    fontWeight: "700",
   },
-  small: { 
-    textAlign: "center", 
-    marginTop: 15, 
-    color: "#777" 
+  sub: {
+    fontSize: 18,
+    marginTop: 10,
+    fontWeight: "500",
+  },
+  small: {
+    textAlign: "center",
+    marginTop: 15,
+    color: "#777",
+    fontSize: 14,
+    lineHeight: 20,
   },
 });

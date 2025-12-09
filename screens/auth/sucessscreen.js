@@ -1,36 +1,67 @@
 import React, { useEffect } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableWithoutFeedback,
+  Keyboard,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function SuccessScreen({ navigation }) {
   useEffect(() => {
     const timer = setTimeout(() => {
       navigation.navigate("ThankYou");
-    }, 5000); // 5000ms = 5 seconds
+    }, 5000);
 
-    // Clear timer if component unmounts
     return () => clearTimeout(timer);
   }, [navigation]);
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.bigCheck}>✓</Text>
-      <Text style={styles.title}>Money is on its way!</Text>
-      <Text style={styles.sub}>
-        Your loan has been disbursed. Funds will reach your account shortly.
-      </Text>
-    </View>
+    <SafeAreaView style={styles.safeArea}>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <KeyboardAvoidingView
+          style={styles.container}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <Text style={styles.bigCheck}>✓</Text>
+          <Text style={styles.title}>Money is on its way!</Text>
+          <Text style={styles.sub}>
+            Your loan has been disbursed. Funds will reach your account shortly.
+          </Text>
+        </KeyboardAvoidingView>
+      </TouchableWithoutFeedback>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 25,
     backgroundColor: "#fff",
   },
-  bigCheck: { fontSize: 70, color: "green", marginBottom: 20 },
-  title: { fontSize: 26, fontWeight: "700" },
-  sub: { textAlign: "center", color: "#777", marginVertical: 20 },
+  container: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 25,
+  },
+  bigCheck: {
+    fontSize: 70,
+    color: "green",
+    marginBottom: 20,
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: "700",
+  },
+  sub: {
+    textAlign: "center",
+    color: "#777",
+    marginVertical: 20,
+    fontSize: 16,
+    lineHeight: 22,
+  },
 });

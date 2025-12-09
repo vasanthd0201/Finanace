@@ -11,13 +11,17 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
+import { SafeAreaView } from "react-native-safe-area-context";
+
 
 // ----------------------------------------------------------
-//  1. Custom Components
+//  1. Custom Components (NO CHANGE)
 // ----------------------------------------------------------
 
 const PanInputComponent = ({
@@ -34,6 +38,7 @@ const PanInputComponent = ({
   return (
     <View style={[styles.panContainer, style]}>
       <Text style={styles.panLabel}>PAN Number</Text>
+
       <TextInput
         style={styles.panInputField}
         value={pan}
@@ -113,16 +118,17 @@ const PanInputComponent = ({
   );
 };
 
+
 const AadharInputComponent = ({
   aadhar,
   onAadharChange,
   onSendOtp,
   aadharVerified,
-  style,
 }) => {
   return (
-    <View style={[styles.aadharContainer, style]}>
+    <View style={styles.aadharContainer}>
       <Text style={styles.aadharLabel}>Aadhar Number</Text>
+
       <TextInput
         style={styles.aadharInputField}
         value={aadhar}
@@ -146,6 +152,7 @@ const AadharInputComponent = ({
   );
 };
 
+
 const OtpVerificationModal = ({
   visible,
   generatedOtp,
@@ -166,53 +173,54 @@ const OtpVerificationModal = ({
 
   return (
     <Modal visible={visible} transparent animationType="slide">
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>Enter OTP</Text>
-          <Text style={styles.modalSubtitle}>Enter 6-digit OTP sent to your mobile</Text>
+      <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Enter OTP</Text>
+            <Text style={styles.modalSubtitle}>
+              Enter 6-digit OTP sent to your mobile
+            </Text>
 
-          <TextInput
-            style={styles.otpModalInput}
-            maxLength={6}
-            keyboardType="number-pad"
-            value={otpInput}
-            onChangeText={setOtpInput}
-          />
+            <TextInput
+              style={styles.otpModalInput}
+              maxLength={6}
+              keyboardType="number-pad"
+              value={otpInput}
+              onChangeText={setOtpInput}
+            />
 
-          <TouchableOpacity
-            style={[
-              styles.verifyButton,
-              otpInput.length !== 6 && styles.verifyButtonDisabled,
-            ]}
-            disabled={otpInput.length !== 6}
-            onPress={handleVerify}
-          >
-            <Text style={styles.verifyButtonText}>Verify OTP</Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.verifyButton,
+                otpInput.length !== 6 && styles.verifyButtonDisabled,
+              ]}
+              disabled={otpInput.length !== 6}
+              onPress={handleVerify}
+            >
+              <Text style={styles.verifyButtonText}>Verify OTP</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity onPress={onClose}>
-            <Text style={styles.closeModalText}>Cancel</Text>
-          </TouchableOpacity>
+            <TouchableOpacity onPress={onClose}>
+              <Text style={styles.closeModalText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      </TouchableWithoutFeedback>
     </Modal>
   );
 };
 
+
 // ----------------------------------------------------------
-//  2. BASICINFO MAIN COMPONENT (UPDATED)
+//  2. MAIN COMPONENT UPDATED WITH SAFEAREAVIEW
 // ----------------------------------------------------------
 
 export default function BasicInfo({ navigation, route }) {
-
-  // ⭐ Mobile safely received from OTP (no crash)
   const mobile = route?.params?.mobile ?? null;
 
-  if (!mobile) {
-    console.warn("⚠️ No mobile received in BasicInfo");
-  }
+  if (!mobile) console.warn("⚠️ Mobile not received in BasicInfo");
 
-  // ---- State declarations ----
+  // All your state remains SAME
   const [fullName, setFullName] = useState("");
   const [pan, setPan] = useState("");
   const [aadhar, setAadhar] = useState("");
@@ -232,15 +240,16 @@ export default function BasicInfo({ navigation, route }) {
   const [accountNumberError, setAccountNumberError] = useState("");
   const [ifscError, setIfscError] = useState("");
 
-  // ----------------------------------------------------------
-  // VALIDATIONS
-  // ----------------------------------------------------------
+
+  // ----------------------------------------
+  // VALIDATION, OTP, IMAGE functions (NO CHANGE)
+  // ----------------------------------------
 
   const validatePan = (text) => {
-    const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
+    const regex = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
     const formatted = text.toUpperCase();
     setPan(formatted);
-    return panRegex.test(formatted);
+    return regex.test(formatted);
   };
 
   const validateAadhar = (text) => {
@@ -276,9 +285,6 @@ export default function BasicInfo({ navigation, route }) {
     }
   };
 
-  // ----------------------------------------------------------
-  //  IMAGE UPLOAD + PAN & AADHAR LOGIC
-  // ----------------------------------------------------------
 
   const handleUploadPanImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -299,6 +305,7 @@ export default function BasicInfo({ navigation, route }) {
     }
   };
 
+
   const handleFetchDetails = () => {
     if (validatePan(pan)) {
       setPanVerified(true);
@@ -307,6 +314,7 @@ export default function BasicInfo({ navigation, route }) {
       Alert.alert("Invalid PAN", "Enter a valid PAN.");
     }
   };
+
 
   const handleSendOtp = async () => {
     if (!validateAadhar(aadhar)) {
@@ -322,6 +330,7 @@ export default function BasicInfo({ navigation, route }) {
     setShowOtpModal(true);
   };
 
+
   const handleOtpVerification = (verified) => {
     if (verified) {
       setAadharVerified(true);
@@ -329,9 +338,6 @@ export default function BasicInfo({ navigation, route }) {
     }
   };
 
-  // ----------------------------------------------------------
-  // 🟦 SAVE & CONTINUE
-  // ----------------------------------------------------------
 
   const storeBasicInfo = async (data) => {
     try {
@@ -342,6 +348,7 @@ export default function BasicInfo({ navigation, route }) {
       return false;
     }
   };
+
 
   const proceed = async () => {
     if (!fullName || !dob || !email) {
@@ -366,7 +373,7 @@ export default function BasicInfo({ navigation, route }) {
 
     const basicInfoData = {
       fullName,
-      mobile,     // ⭐ NOW INCLUDED SAFELY
+      mobile,
       pan,
       panImage,
       aadhar,
@@ -382,168 +389,182 @@ export default function BasicInfo({ navigation, route }) {
     if (saved) navigation.navigate("ProfessionalInfo");
   };
 
+
+
   // ----------------------------------------------------------
-  // UI
+  //  FINAL UI WITH SAFEAREAVIEW + KEYBOARD DISMISS
   // ----------------------------------------------------------
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={{ flex: 1 }}
-    >
-      <ScrollView contentContainerStyle={styles.scrollContentContainer}>
-        <Text style={styles.step}>Step 1 of 4</Text>
-        <Text style={styles.title}>Basic Information</Text>
-
-        {/* FULL NAME */}
-        <Text style={styles.panLabel}>Full Name</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Full Name"
-          value={fullName}
-          onChangeText={setFullName}
-        />
-
-        {/* PAN */}
-        <PanInputComponent
-          pan={pan}
-          onPanChange={validatePan}
-          onFetchDetails={handleFetchDetails}
-          onUploadImage={handleUploadPanImage}
-          panImage={panImage}
-          panVerificationMethod={panVerificationMethod}
-          onSetVerificationMethod={setPanVerificationMethod}
-          panVerified={panVerified}
-        />
-
-        {panVerified && <Text style={styles.verificationStatus}>✓ PAN Verified</Text>}
-
-        {/* AADHAR */}
-        <AadharInputComponent
-          aadhar={aadhar}
-          onAadharChange={validateAadhar}
-          onSendOtp={handleSendOtp}
-          aadharVerified={aadharVerified}
-        />
-
-        {/* DOB */}
-        <TouchableOpacity onPress={() => setShowPicker(true)}>
-          <Text style={styles.panLabel}>Date of Birth</Text>
-          <View style={styles.input}>
-            <Text style={{ color: dob ? "#000" : "#777" }}>
-              {dob ? dob.toDateString() : "Select DOB"}
-            </Text>
-          </View>
-        </TouchableOpacity>
-
-        {showPicker && (
-          <DateTimePicker
-            value={dob || new Date()}
-            mode="date"
-            display="spinner"
-            maximumDate={new Date()}
-            onChange={(event, selectedDate) => {
-              setShowPicker(false);
-              if (selectedDate) setDob(selectedDate);
-            }}
-          />
-        )}
-
-        {/* EMAIL */}
-        <Text style={styles.panLabel}>Email Address</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          keyboardType="email-address"
-          value={email}
-          onChangeText={setEmail}
-        />
-
-        {/* BANK DETAILS */}
-        <Text style={styles.bankDetailsTitle}>Bank Details</Text>
-
-        <Text style={styles.panLabel}>Account Number</Text>
-        <TextInput
-          style={[styles.input, accountNumberError && styles.inputError]}
-          placeholder="Account Number"
-          keyboardType="numeric"
-          value={accountNumber}
-          onChangeText={validateAccountNumber}
-        />
-        {accountNumberError ? (
-          <Text style={styles.errorText}>{accountNumberError}</Text>
-        ) : null}
-
-        <Text style={styles.panLabel}>Bank Name</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Bank Name"
-          value={bankName}
-          onChangeText={setBankName}
-        />
-
-        <Text style={styles.panLabel}>IFSC Code</Text>
-        <TextInput
-          style={[styles.input, ifscError && styles.inputError]}
-          placeholder="SBIN0000001"
-          value={ifsc}
-          onChangeText={validateIfscCode}
-          autoCapitalize="characters"
-        />
-        {ifscError ? (
-          <Text style={styles.errorText}>{ifscError}</Text>
-        ) : null}
-
-        <Text style={styles.panLabel}>Branch</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Branch Name"
-          value={branch}
-          onChangeText={setBranch}
-        />
-
-        {/* CONTINUE */}
-        <TouchableOpacity
-          style={[
-            styles.button,
-            (!panVerified || !aadharVerified) && styles.buttonDisabled,
-          ]}
-          disabled={!panVerified || !aadharVerified}
-          onPress={proceed}
+    <SafeAreaView style={styles.safeArea}>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
-          <Text style={styles.buttonText}>Continue</Text>
-        </TouchableOpacity>
+          <ScrollView
+            contentContainerStyle={styles.scrollContentContainer}
+            keyboardShouldPersistTaps="handled"
+          >
+            <Text style={styles.step}>Step 1 of 4</Text>
+            <Text style={styles.title}>Basic Information</Text>
 
-        {/* OTP MODAL */}
-        <OtpVerificationModal
-          visible={showOtpModal}
-          generatedOtp={generatedAadharOtp}
-          onVerify={handleOtpVerification}
-          onClose={() => setShowOtpModal(false)}
-        />
-      </ScrollView>
-    </KeyboardAvoidingView>
+            {/* FULL NAME */}
+            <Text style={styles.panLabel}>Full Name</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Full Name"
+              value={fullName}
+              onChangeText={setFullName}
+            />
+
+            {/* PAN */}
+            <PanInputComponent
+              pan={pan}
+              onPanChange={validatePan}
+              onFetchDetails={handleFetchDetails}
+              onUploadImage={handleUploadPanImage}
+              panImage={panImage}
+              panVerificationMethod={panVerificationMethod}
+              onSetVerificationMethod={setPanVerificationMethod}
+              panVerified={panVerified}
+            />
+
+            {panVerified && (
+              <Text style={styles.verificationStatus}>✓ PAN Verified</Text>
+            )}
+
+            {/* AADHAR */}
+            <AadharInputComponent
+              aadhar={aadhar}
+              onAadharChange={validateAadhar}
+              onSendOtp={handleSendOtp}
+              aadharVerified={aadharVerified}
+            />
+
+            {/* DOB */}
+            <TouchableOpacity onPress={() => setShowPicker(true)}>
+              <Text style={styles.panLabel}>Date of Birth</Text>
+              <View style={styles.input}>
+                <Text style={{ color: dob ? "#000" : "#777" }}>
+                  {dob ? dob.toDateString() : "Select DOB"}
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            {showPicker && (
+              <DateTimePicker
+                value={dob || new Date()}
+                mode="date"
+                maximumDate={new Date()}
+                display="spinner"
+                onChange={(event, selectedDate) => {
+                  setShowPicker(false);
+                  if (selectedDate) setDob(selectedDate);
+                }}
+              />
+            )}
+
+            {/* EMAIL */}
+            <Text style={styles.panLabel}>Email Address</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Email"
+              keyboardType="email-address"
+              value={email}
+              onChangeText={setEmail}
+            />
+
+            {/* BANK DETAILS */}
+            <Text style={styles.bankDetailsTitle}>Bank Details</Text>
+
+            <Text style={styles.panLabel}>Account Number</Text>
+            <TextInput
+              style={[styles.input, accountNumberError && styles.inputError]}
+              placeholder="Account Number"
+              keyboardType="numeric"
+              value={accountNumber}
+              onChangeText={validateAccountNumber}
+            />
+            {accountNumberError ? (
+              <Text style={styles.errorText}>{accountNumberError}</Text>
+            ) : null}
+
+            <Text style={styles.panLabel}>Bank Name</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Bank Name"
+              value={bankName}
+              onChangeText={setBankName}
+            />
+
+            <Text style={styles.panLabel}>IFSC Code</Text>
+            <TextInput
+              style={[styles.input, ifscError && styles.inputError]}
+              placeholder="SBIN0000001"
+              value={ifsc}
+              onChangeText={validateIfscCode}
+              autoCapitalize="characters"
+            />
+            {ifscError ? (
+              <Text style={styles.errorText}>{ifscError}</Text>
+            ) : null}
+
+            <Text style={styles.panLabel}>Branch</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Branch Name"
+              value={branch}
+              onChangeText={setBranch}
+            />
+
+            {/* CONTINUE */}
+            <TouchableOpacity
+              style={[
+                styles.button,
+                (!panVerified || !aadharVerified) && styles.buttonDisabled,
+              ]}
+              disabled={!panVerified || !aadharVerified}
+              onPress={proceed}
+            >
+              <Text style={styles.buttonText}>Continue</Text>
+            </TouchableOpacity>
+
+            {/* OTP MODAL */}
+            <OtpVerificationModal
+              visible={showOtpModal}
+              generatedOtp={generatedAadharOtp}
+              onVerify={handleOtpVerification}
+              onClose={() => setShowOtpModal(false)}
+            />
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </TouchableWithoutFeedback>
+    </SafeAreaView>
   );
 }
 
-// --- 3. Updated Stylesheet ---
+
+
+// ----------------------------------------------------------
+//  3. UPDATED STYLES (ONLY TOP ADDED SAFE AREA STYLES)
+// ----------------------------------------------------------
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
     backgroundColor: "#fff",
   },
-  scrollContainer: {
-    flex: 1,
-  },
+
   scrollContentContainer: {
     padding: 25,
-    paddingBottom: 50,
+    paddingBottom: 80,
   },
+
   step: {
     color: "#777",
     marginBottom: 5,
-    marginTop: 20,
+    marginTop: 10,
     fontSize: 14,
   },
   title: {
@@ -551,6 +572,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginBottom: 20,
   },
+
   input: {
     width: "100%",
     height: 50,
@@ -558,10 +580,11 @@ const styles = StyleSheet.create({
     borderColor: "#ccc",
     borderRadius: 10,
     paddingHorizontal: 15,
-    justifyContent: "center",
     fontSize: 16,
-    marginBottom: 5,
+    justifyContent: "center",
+    marginBottom: 10,
   },
+
   inputError: {
     borderColor: "#ff4444",
     borderWidth: 2,
@@ -569,15 +592,10 @@ const styles = StyleSheet.create({
   errorText: {
     color: "#ff4444",
     fontSize: 12,
-    marginBottom: 15,
+    marginBottom: 10,
     fontWeight: "600",
   },
-  successText: {
-    color: "#4CAF50",
-    fontSize: 12,
-    marginBottom: 15,
-    fontWeight: "600",
-  },
+
   button: {
     width: "100%",
     height: 50,
@@ -587,25 +605,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 10,
   },
+  buttonDisabled: {
+    opacity: 0.5,
+  },
   buttonText: {
     color: "#fff",
     fontSize: 18,
     fontWeight: "600",
   },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
 
-  // --- PAN Component Styles ---
-  panContainer: {
-    marginBottom: 15,
-  },
-  panLabel: {
-    fontSize: 14,
-    color: "#555",
-    marginBottom: 5,
-    fontWeight: "bold",
-  },
+  // PAN Styles
+  panContainer: { marginBottom: 15 },
+  panLabel: { fontSize: 14, fontWeight: "bold", color: "#555", marginBottom: 5 },
   panInputField: {
     width: "100%",
     height: 50,
@@ -616,8 +627,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 15,
   },
+
   fetchButton: {
-    width: "100%",
     height: 50,
     backgroundColor: "#001F54",
     borderRadius: 10,
@@ -625,6 +636,42 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 20,
   },
+
+  methodLabel: {
+    fontSize: 14,
+    color: "#555",
+    marginBottom: 10,
+    fontWeight: "600",
+  },
+  methodButtonsContainer: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 15,
+  },
+
+  methodButton: {
+    flex: 1,
+    height: 45,
+    borderWidth: 2,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f9f9f9",
+  },
+  methodButtonActive: {
+    borderColor: "#001F54",
+    backgroundColor: "#e3f2fd",
+  },
+  methodButtonText: {
+    fontSize: 14,
+    color: "#666",
+    fontWeight: "600",
+  },
+  methodButtonTextActive: {
+    color: "#001F54",
+  },
+
   uploadArea: {
     borderWidth: 1,
     borderColor: "#ddd",
@@ -634,39 +681,32 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#f9f9f9",
   },
-  uploadIcon: {
-    fontSize: 30,
-    color: "#777",
-    marginBottom: 5,
-  },
-  uploadText: {
-    fontSize: 16,
-    color: "#777",
-  },
-  uploadedImageContainer: {
-    alignItems: "center",
-  },
+  uploadIcon: { fontSize: 30, color: "#777", marginBottom: 5 },
+  uploadText: { fontSize: 16, color: "#777" },
+
+  uploadedImageContainer: { alignItems: "center" },
   uploadedImage: {
     width: 100,
     height: 60,
     borderRadius: 8,
     marginBottom: 10,
   },
-  uploadedText: {
+  uploadedText: { color: "#4CAF50", fontWeight: "600", fontSize: 14 },
+
+  verificationStatus: {
     color: "#4CAF50",
-    fontSize: 14,
     fontWeight: "600",
+    fontSize: 14,
+    marginBottom: 10,
   },
 
-  // --- Aadhar Component Styles ---
-  aadharContainer: {
-    marginBottom: 15,
-  },
+  // Aadhar Styles
+  aadharContainer: { marginBottom: 15 },
   aadharLabel: {
     fontSize: 14,
+    fontWeight: "bold",
     color: "#555",
     marginBottom: 5,
-    fontWeight: "bold",
   },
   aadharInputField: {
     width: "100%",
@@ -679,40 +719,23 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   sendOtpButton: {
-    width: "100%",
     height: 50,
     backgroundColor: "#001F54",
     borderRadius: 10,
     justifyContent: "center",
     alignItems: "center",
   },
-  sendOtpButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-
+  sendOtpButtonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
   verifiedButton: {
-    width: "100%",
     height: 50,
     backgroundColor: "#4CAF50",
     borderRadius: 10,
     justifyContent: "center",
     alignItems: "center",
   },
-  verifiedText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  verificationStatus: {
-    color: "#4CAF50",
-    fontWeight: "600",
-    fontSize: 14,
-    marginBottom: 10,
-  },
+  verifiedText: { color: "#fff", fontSize: 16, fontWeight: "600" },
 
-  // --- Bank Section ---
+  // Bank
   bankDetailsTitle: {
     fontSize: 16,
     fontWeight: "700",
@@ -721,7 +744,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
 
-  // --- OTP Modal Styles ---
+  // Modal
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
@@ -732,7 +755,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
-    minHeight: 350,
+    minHeight: 320,
   },
   modalTitle: {
     fontSize: 24,
@@ -759,7 +782,6 @@ const styles = StyleSheet.create({
     letterSpacing: 5,
   },
   verifyButton: {
-    width: "100%",
     height: 50,
     backgroundColor: "#001F54",
     borderRadius: 10,
@@ -770,50 +792,13 @@ const styles = StyleSheet.create({
   verifyButtonDisabled: {
     opacity: 0.5,
   },
-  verifyButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
-  },
+  verifyButtonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
   closeModalText: {
     color: "#001F54",
     fontSize: 16,
     textAlign: "center",
-    fontWeight: "600",
-  },
-
-  // --- Verification Method Buttons ---
-  methodLabel: {
-    fontSize: 14,
-    color: "#555",
-    marginBottom: 10,
-    fontWeight: "600",
-  },
-  methodButtonsContainer: {
-    flexDirection: "row",
-    gap: 10,
     marginBottom: 15,
-  },
-  methodButton: {
-    flex: 1,
-    height: 45,
-    borderWidth: 2,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#f9f9f9",
-  },
-  methodButtonActive: {
-    borderColor: "#001F54",
-    backgroundColor: "#e3f2fd",
-  },
-  methodButtonText: {
-    fontSize: 14,
-    color: "#666",
     fontWeight: "600",
-  },
-  methodButtonTextActive: {
-    color: "#001F54",
   },
 });
+

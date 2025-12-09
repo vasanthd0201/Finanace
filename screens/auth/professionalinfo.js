@@ -1,6 +1,19 @@
 import { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  Alert,
+  TouchableWithoutFeedback,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
 import * as DocumentPicker from "expo-document-picker";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function ProfessionalInfo({ navigation }) {
   const [employment, setEmployment] = useState("");
@@ -11,13 +24,14 @@ export default function ProfessionalInfo({ navigation }) {
 
   const pickDocument = async () => {
     try {
-      let allowedTypes;
-      
-      if (employment === "salaried") {
-        allowedTypes = ["application/pdf", "image/*"];
-      } else {
-        allowedTypes = ["application/pdf", "image/*", "application/vnd.openxmlformats-spreadsheetml.sheet"];
-      }
+      let allowedTypes =
+        employment === "salaried"
+          ? ["application/pdf", "image/*"]
+          : [
+              "application/pdf",
+              "image/*",
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            ];
 
       const result = await DocumentPicker.getDocumentAsync({
         type: allowedTypes,
@@ -49,101 +63,129 @@ export default function ProfessionalInfo({ navigation }) {
       return;
     }
 
-    const currentDocuments = employment === "salaried" ? salariedDocuments : selfEmployedDocuments;
-    
-    if (currentDocuments.length === 0) {
+    const docs = employment === "salaried" ? salariedDocuments : selfEmployedDocuments;
+
+    if (docs.length === 0) {
       alert("Please upload at least one document.");
       return;
     }
 
     navigation.navigate("KycVerification");
-
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.step}>Step 2 of 4</Text>
-      <Text style={styles.title}>Professional Details</Text>
-
-      <Text style={styles.label}>Employment Type</Text>
-
-      <View style={styles.row}>
-        <TouchableOpacity
-          style={[styles.option, employment === "salaried" && styles.selected]}
-          onPress={() => setEmployment("salaried")}
+    <SafeAreaView style={styles.safeArea}>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
-          <Text style={styles.optionText}>Salaried</Text>
-        </TouchableOpacity>
+          <ScrollView
+            contentContainerStyle={styles.container}
+            keyboardShouldPersistTaps="handled"
+          >
+            <Text style={styles.step}>Step 2 of 4</Text>
+            <Text style={styles.title}>Professional Details</Text>
 
-        <TouchableOpacity
-          style={[styles.option, employment === "self" && styles.selected]}
-          onPress={() => setEmployment("self")}
-        >
-          <Text style={styles.optionText}>Self-Employed</Text>
-        </TouchableOpacity>
-      </View>
+            <Text style={styles.label}>Employment Type</Text>
 
-      {employment === "salaried" && (
-        <TextInput
-          style={styles.input}
-          placeholder="Company Name"
-          value={company}
-          onChangeText={setCompany}
-        />
-      )}
+            <View style={styles.row}>
+              <TouchableOpacity
+                style={[styles.option, employment === "salaried" && styles.selected]}
+                onPress={() => setEmployment("salaried")}
+              >
+                <Text style={[styles.optionText, employment === "salaried" && styles.optionTextSelected]}>
+                  Salaried
+                </Text>
+              </TouchableOpacity>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Net Monthly Income"
-        keyboardType="number-pad"
-        value={income}
-        onChangeText={setIncome}
-      />
-
-      {employment && (
-        <View style={styles.documentSection}>
-          <Text style={styles.label}>Upload Documents</Text>
-          <Text style={styles.documentHint}>
-            {employment === "salaried" 
-              ? "Upload salary slips and/or bank statements (PDF or Image)" 
-              : "Upload ITR, business documents, and/or GST certificates (PDF, Image, or Excel)"}
-          </Text>
-
-          <TouchableOpacity style={styles.documentButton} onPress={pickDocument}>
-            <Text style={styles.documentButtonText}>+ Add Document</Text>
-          </TouchableOpacity>
-
-          {(employment === "salaried" ? salariedDocuments : selfEmployedDocuments).map((doc, index) => (
-            <View key={index} style={styles.documentItem}>
-              <Text style={styles.documentName} numberOfLines={1}>
-                {doc.name}
-              </Text>
-              <TouchableOpacity onPress={() => removeDocument(index)}>
-                <Text style={styles.removeText}>Remove</Text>
+              <TouchableOpacity
+                style={[styles.option, employment === "self" && styles.selected]}
+                onPress={() => setEmployment("self")}
+              >
+                <Text style={[styles.optionText, employment === "self" && styles.optionTextSelected]}>
+                  Self-Employed
+                </Text>
               </TouchableOpacity>
             </View>
-          ))}
 
-          {(employment === "salaried" ? salariedDocuments : selfEmployedDocuments).length > 0 && (
-            <Text style={styles.documentCount}>
-              {(employment === "salaried" ? salariedDocuments : selfEmployedDocuments).length} document{(employment === "salaried" ? salariedDocuments : selfEmployedDocuments).length > 1 ? "s" : ""} selected
-            </Text>
-          )}
-        </View>
-      )}
+            {employment === "salaried" && (
+              <TextInput
+                style={styles.input}
+                placeholder="Company Name"
+                value={company}
+                onChangeText={setCompany}
+              />
+            )}
 
-      <TouchableOpacity style={styles.button} onPress={proceed}>
-        <Text style={styles.buttonText}>Continue</Text>
-      </TouchableOpacity>
-    </ScrollView>
+            <TextInput
+              style={styles.input}
+              placeholder="Net Monthly Income"
+              keyboardType="number-pad"
+              value={income}
+              onChangeText={setIncome}
+            />
+
+            {employment && (
+              <View style={styles.documentSection}>
+                <Text style={styles.label}>Upload Documents</Text>
+
+                <Text style={styles.documentHint}>
+                  {employment === "salaried"
+                    ? "Upload salary slips and/or bank statements (PDF or Image)"
+                    : "Upload ITR, business documents, GST certificates (PDF, Image, or Excel)"}
+                </Text>
+
+                <TouchableOpacity style={styles.documentButton} onPress={pickDocument}>
+                  <Text style={styles.documentButtonText}>+ Add Document</Text>
+                </TouchableOpacity>
+
+                {(employment === "salaried"
+                  ? salariedDocuments
+                  : selfEmployedDocuments
+                ).map((doc, index) => (
+                  <View key={index} style={styles.documentItem}>
+                    <Text style={styles.documentName} numberOfLines={1}>
+                      {doc.name}
+                    </Text>
+                    <TouchableOpacity onPress={() => removeDocument(index)}>
+                      <Text style={styles.removeText}>Remove</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+
+                {(employment === "salaried"
+                  ? salariedDocuments.length
+                  : selfEmployedDocuments.length) > 0 && (
+                  <Text style={styles.documentCount}>
+                    {(employment === "salaried"
+                      ? salariedDocuments.length
+                      : selfEmployedDocuments.length)}{" "}
+                    document selected
+                  </Text>
+                )}
+              </View>
+            )}
+
+            <TouchableOpacity style={styles.button} onPress={proceed}>
+              <Text style={styles.buttonText}>Continue</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </TouchableWithoutFeedback>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
   container: {
     flexGrow: 1,
-    backgroundColor: "#fff",
     padding: 25,
+    paddingBottom: 80,
   },
   step: {
     color: "#777",
@@ -179,6 +221,10 @@ const styles = StyleSheet.create({
   },
   optionText: {
     color: "#000",
+    fontWeight: "600",
+  },
+  optionTextSelected: {
+    color: "#fff",
   },
   input: {
     width: "100%",
@@ -187,7 +233,6 @@ const styles = StyleSheet.create({
     borderColor: "#ccc",
     borderRadius: 10,
     paddingHorizontal: 15,
-    justifyContent: "center",
     fontSize: 16,
     marginBottom: 15,
   },
@@ -223,8 +268,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+    padding: 12,
     backgroundColor: "#f9f9f9",
     borderRadius: 8,
     marginBottom: 10,
@@ -254,7 +298,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 10,
+    marginTop: 15,
   },
   buttonText: {
     color: "#fff",
