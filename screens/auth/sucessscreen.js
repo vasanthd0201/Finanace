@@ -9,9 +9,29 @@ import {
   Keyboard,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function SuccessScreen({ navigation }) {
   useEffect(() => {
+    const setApprovalDate = async () => {
+      try {
+        const loanData = await AsyncStorage.getItem("loanDetails");
+        if (loanData) {
+          const parsedLoan = JSON.parse(loanData);
+          if (!parsedLoan.approvalDate) {
+            parsedLoan.approvalDate = new Date().toDateString();
+            // Also ensure paidEMIs is initialized
+            if (parsedLoan.paidEMIs === undefined) parsedLoan.paidEMIs = 0;
+            
+            await AsyncStorage.setItem("loanDetails", JSON.stringify(parsedLoan));
+          }
+        }
+      } catch (e) {
+        console.log("Error setting approval date", e);
+      }
+    };
+    setApprovalDate();
+
     const timer = setTimeout(() => {
       navigation.navigate("ThankYou");
     }, 5000);

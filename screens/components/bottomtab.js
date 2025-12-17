@@ -4,6 +4,7 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 
 import Home from "../home";
 import Loans from "../loans";
+import Offers from "../offers";
 import Help from "../help";
 import Profile from "../profile";
 
@@ -21,6 +22,7 @@ export default function BottomTab() {
           const icons = {
             Home: "home-outline",
             Loans: "wallet-outline",
+            Offers: "pricetag-outline",
             Help: "help-circle-outline",
             Profile: "person-outline",
           };
@@ -31,6 +33,7 @@ export default function BottomTab() {
     >
       <Tab.Screen name="Home" component={Home} />
       <Tab.Screen name="Loans" component={Loans} />
+      <Tab.Screen name="Offers" component={Offers} />
       <Tab.Screen name="Help" component={Help} />
       <Tab.Screen name="Profile" component={Profile} />
     </Tab.Navigator>

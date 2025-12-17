@@ -22,8 +22,11 @@ import Home from "./screens/home";
 import Loans from "./screens/loans";
 import Help from "./screens/help";
 import Profile from "./screens/profile";
-import Offers from "./screens/offers";
+import CreditCardFest from "./screens/creditcardfest";
+import InviteEarn from "./screens/inviteearn";
+import PayBills from "./screens/paybills";
 
+import NextEmiPayment from "./screens/NextEmiPayment";
 const Stack = createStackNavigator();
 
 export default function App() {
@@ -116,12 +119,6 @@ export default function App() {
           options={{ headerShown: false }} 
           />
 
-          {/* FIXED — NAME MUST MATCH navigation.navigate("offers") */}
-          <Stack.Screen 
-          name="offers" 
-          component={Offers} 
-          options={{ headerShown: false }} 
-          />
 
           <Stack.Screen 
           name="Loans" 
@@ -138,6 +135,30 @@ export default function App() {
           <Stack.Screen 
           name="Profile" 
           component={Profile} 
+          options={{ headerShown: false }} 
+          />
+
+          <Stack.Screen 
+          name="CreditCardFest" 
+          component={CreditCardFest} 
+          options={{ headerShown: false }} 
+          />
+
+          <Stack.Screen 
+          name="InviteEarn" 
+          component={InviteEarn} 
+          options={{ headerShown: false }} 
+          />
+
+          <Stack.Screen 
+          name="PayBills" 
+          component={PayBills} 
+          options={{ headerShown: false }} 
+          />
+
+          <Stack.Screen 
+          name="NextEmiPayment" 
+          component={NextEmiPayment} 
           options={{ headerShown: false }} 
           />
 

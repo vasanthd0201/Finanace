@@ -1,57 +1,69 @@
-import { useState, useEffect } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from "react-native";
+import { useState, useCallback } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+} from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
+
+const DEFAULT_TENURE = 8;
 
 export default function Home({ navigation }) {
   const [user, setUser] = useState(null);
   const [loan, setLoan] = useState(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
+  useFocusEffect(
+    useCallback(() => {
+      const loadData = async () => {
         const userData = await AsyncStorage.getItem("@BasicInfoData");
         const loanData = await AsyncStorage.getItem("loanDetails");
 
         if (userData) setUser(JSON.parse(userData));
+
         if (loanData) {
-          const parsedLoan = JSON.parse(loanData);
-          setLoan(parsedLoan);
+          const parsed = JSON.parse(loanData);
+          parsed.tenureMonths = parsed.tenureMonths || DEFAULT_TENURE;
+          parsed.paidEMIs = Number(parsed.paidEMIs || 0);
+          setLoan(parsed);
         }
-      } catch (error) {
-        console.log("Error loading dashboard data:", error);
-      }
-    };
+      };
 
-    fetchData();
-  }, []);
+      loadData();
+    }, [])
+  );
 
-  const calculateLoanStats = () => {
-    if (!loan) return { paid: 0, remaining: 0, paidEMIs: 0 };
+  if (!loan) {
+    return (
+      <SafeAreaView style={styles.center}>
+        <Text style={{ color: "#6C757D" }}>No active loan</Text>
+      </SafeAreaView>
+    );
+  }
 
-    const paidEMIs = Number(loan.paidEMIs) || 0;
-    const amount = Number(loan.amount) || 0;
-    const emi = Number(loan.emi) || 0;
+  /* CALCULATIONS */
+  const totalAmount = Number(loan.amount);
+  const tenure = Number(loan.tenureMonths);
+  const paidEMIs = Number(loan.paidEMIs);
 
-    const paidAmount = emi * paidEMIs;
-    const remainingAmount = amount - paidAmount;
+  const emi = Math.ceil(totalAmount / tenure);
+  const paidAmount = emi * paidEMIs;
+  const remainingAmount = Math.max(totalAmount - paidAmount, 0);
 
-    return {
-      paid: paidAmount,
-      remaining: remainingAmount > 0 ? remainingAmount : 0,
-      paidEMIs: paidEMIs,
-      totalEMIs: Number(loan.months),
-      progressPercent: ((paidEMIs / Number(loan.months)) * 100).toFixed(1),
-    };
-  };
+  const progressPercent = Math.min(
+    Math.round((paidEMIs / tenure) * 100),
+    100
+  );
 
-  const handleLogout = () => {
-    navigation.reset({
-      index: 0,
-      routes: [{ name: "login" }],
-    });
-  };
+  const nextEmiDate = (() => {
+    const d = loan.approvalDate ? new Date(loan.approvalDate) : new Date();
+    d.setMonth(d.getMonth() + paidEMIs);
+    return d.toDateString();
+  })();
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
@@ -60,196 +72,126 @@ export default function Home({ navigation }) {
         <View>
           <Text style={styles.greeting}>Welcome back,</Text>
           <Text style={styles.username}>
-            {user?.fullName ? user.fullName.split(" ")[0] : "User"} 👋
+            {user?.fullName?.split(" ")[0] || "User"} 👋
           </Text>
         </View>
 
-        <TouchableOpacity onPress={handleLogout}>
-          <Ionicons name="log-out-outline" size={30} color="#001F3F" />
+        <TouchableOpacity
+          onPress={() =>
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "login" }],
+            })
+          }
+        >
+          <Ionicons name="log-out-outline" size={28} />
         </TouchableOpacity>
       </View>
 
-      <ScrollView
-        style={styles.content}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 40 }}
-      >
-        {/* ACTIVE LOAN */}
-        {loan ? (
-          <View style={styles.loanCard}>
-            <Text style={styles.cardTitle}>Active Loan</Text>
+      <ScrollView style={{ paddingHorizontal: 10 }}>
+        {/* LOAN SUMMARY */}
+        <View style={styles.loanCard}>
+          <Text style={styles.cardTitle}>Loan Summary</Text>
 
+          <View style={styles.loanAmountRow}>
             <Text style={styles.loanAmount}>
-              ₹{Number(loan.amount).toLocaleString()}
+              ₹{totalAmount.toLocaleString()}
             </Text>
 
-            <View style={styles.row}>
-              <Text style={styles.smallLabel}>Tenure: {loan.months} months</Text>
-              <Text style={styles.smallLabel}>EMI:</Text>
-              <Text style={styles.highlight}>₹{Number(loan.emi)}</Text>
-            </View>
-
-            <View style={styles.buttonRow}>
-              <TouchableOpacity 
-                style={styles.primaryButton}
-                onPress={() => Alert.alert("Payment", "EMI Payment processed successfully!")}
-              >
-                <Text style={styles.primaryButtonText}>Pay EMI</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        ) : (
-          <Text style={{ textAlign: "center", marginVertical: 20, color: "#6C757D" }}>
-            No active loan found.
-          </Text>
-        )}
-
-        {/* LOAN STATISTICS */}
-        {loan && (
-          <View style={styles.statsContainer}>
-            <Text style={styles.sectionTitle}>Loan Statistics</Text>
-
-            <View style={styles.statsGrid}>
-              <View style={styles.statBox}>
-                <Text style={styles.statLabel}>Total Paid</Text>
-                <Text style={styles.statAmount}>
-                  ₹{calculateLoanStats().paid.toLocaleString()}
-                </Text>
-              </View>
-
-              <View style={styles.statBox}>
-                <Text style={styles.statLabel}>Remaining</Text>
-                <Text style={styles.statAmount}>
-                  ₹{calculateLoanStats().remaining.toLocaleString()}
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.progressSection}>
-              <View style={styles.progressHeader}>
-                <Text style={styles.progressLabel}>Repayment Progress</Text>
-                <Text style={styles.progressPercent}>
-                  {calculateLoanStats().progressPercent}%
-                </Text>
-              </View>
-
-              <View style={styles.progressBar}>
-                <View
-                  style={[
-                    styles.progressFill,
-                    { width: `${calculateLoanStats().progressPercent}%` },
-                  ]}
-                />
-              </View>
-
-              <Text style={styles.progressText}>
-                {calculateLoanStats().paidEMIs} of {calculateLoanStats().totalEMIs} EMIs paid
+            <View style={styles.tenureBadge}>
+              <Text style={styles.tenureText}>{tenure} Months</Text>
+              <Text style={styles.approvalText}>
+                {loan.approvalDate
+                  ? new Date(loan.approvalDate).toLocaleDateString(
+                      "en-IN",
+                      { day: "2-digit", month: "short", year: "numeric" }
+                    )
+                  : ""}
               </Text>
             </View>
           </View>
-        )}
 
-        {/* UPCOMING EMI */}
-        {loan && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Upcoming EMI</Text>
-            <Text style={styles.sectionText}>Due on: 12 Dec 2025</Text>
-            <Text style={styles.sectionAmount}>₹{Number(loan.emi)}</Text>
+          <Text style={styles.subText}>Total Loan Amount</Text>
 
-            <TouchableOpacity onPress={() => navigation.navigate("Loans")}>
-              <Text style={styles.link}>View repayment schedule →</Text>
-            </TouchableOpacity>
+          <View style={styles.divider} />
+
+          {/* 🔥 MONTHLY EMI LEFT / RIGHT */}
+          <View style={styles.emiRow}>
+            <Text style={styles.emiText}>Monthly EMI</Text>
+            <Text style={styles.emiAmount}>₹{emi}</Text>
           </View>
-        )}
-
-        {/* LOAN DETAILS */}
-        {loan && (
-          <View style={styles.detailsSection}>
-            <Text style={styles.sectionTitle}>Loan Details</Text>
-
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Loan Amount</Text>
-              <Text style={styles.detailValue}>₹{Number(loan.amount).toLocaleString()}</Text>
-            </View>
-
-            <View style={styles.divider} />
-
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Tenure</Text>
-              <Text style={styles.detailValue}>{loan.months} Months</Text>
-            </View>
-
-            <View style={styles.divider} />
-
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Monthly EMI</Text>
-              <Text style={styles.detailValue}>₹{Number(loan.emi).toLocaleString()}</Text>
-            </View>
-
-            <View style={styles.divider} />
-
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Interest Rate</Text>
-              <Text style={styles.detailValue}>
-                {loan.rate ? `${loan.rate}%` : "12%"} p.a.
-              </Text>
-            </View>
-
-            <View style={styles.divider} />
-
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Loan Approval Date</Text>
-              <Text style={styles.detailValue}>{loan.approvalDate || "15 Nov 2025"}</Text>
-            </View>
-          </View>
-        )}
-
-        {/* OFFERS */}
-        <View style={styles.offersBox}>
-          <Text style={styles.offersTitle}>Exclusive Offers For You</Text>
-          <Text style={styles.offersDesc}>Increase your limit up to ₹80,000 instantly</Text>
-
-          {/* 👉 Navigate to Offers Screen */}
-          <TouchableOpacity
-            style={styles.primaryButton}
-            onPress={() => navigation.navigate("offers")}
-          >
-            <Text style={styles.primaryButtonText}>Check Eligibility</Text>
-          </TouchableOpacity>
         </View>
 
-        {/* APPLY FOR NEW LOAN */}
-        <TouchableOpacity 
-          style={styles.secondaryOfferBox}
-          onPress={() => navigation.navigate("offers")}
-        >
-          <View style={styles.offerIconBox}>
-            <Ionicons name="add-circle-outline" size={28} color="#FFD700" />
+        {/* LOAN STATISTICS */}
+        <View style={styles.statsContainer}>
+          <Text style={styles.sectionTitle}>Loan Statistics</Text>
+
+          <View style={styles.statsGrid}>
+            <View style={styles.statBox}>
+              <Text style={styles.statLabel}>Total Paid</Text>
+              <Text style={styles.statAmount}>
+                ₹{paidAmount.toLocaleString()}
+              </Text>
+            </View>
+
+            <View style={styles.statBox}>
+              <Text style={styles.statLabel}>Remaining</Text>
+              <Text style={styles.statAmount}>
+                ₹{remainingAmount.toLocaleString()}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* REPAYMENT PROGRESS */}
+        <View style={styles.progressSection}>
+          <View style={styles.progressHeader}>
+            <Text style={styles.progressLabel}>Repayment Progress</Text>
+            <Text style={styles.progressPercent}>{progressPercent}%</Text>
           </View>
 
-          <View style={styles.offerTextBox}>
-            <Text style={styles.offerNewTitle}>Apply for Additional Loan</Text>
-            <Text style={styles.offerNewDesc}>Quick approval in 24 hours</Text>
+          <View style={styles.progressBar}>
+            <View
+              style={[
+                styles.progressFill,
+                { width: `${progressPercent}%` },
+              ]}
+            />
           </View>
 
-          <Ionicons name="chevron-forward" size={24} color="#FFD700" />
-        </TouchableOpacity>
+          <Text style={styles.progressText}>
+            {paidEMIs} of {tenure} EMIs paid
+          </Text>
+        </View>
+
+        {/* UPCOMING EMI */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Upcoming EMI</Text>
+          <Text style={styles.sectionText}>Due on: {nextEmiDate}</Text>
+          <Text style={styles.sectionAmount}>₹{emi}</Text>
+
+          <TouchableOpacity
+            onPress={() => navigation.navigate("NextEmiPayment")}
+          >
+            <Text style={styles.link}>Pay next EMI →</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
+/* STYLES */
 const styles = StyleSheet.create({
+  center: { flex: 1, justifyContent: "center", alignItems: "center" },
+
   headerRow: {
-    marginTop: 10,
-    marginBottom: 10,
+    marginVertical: 10,
     paddingHorizontal: 20,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
-
-  content: { flex: 1, paddingHorizontal: 10 },
   greeting: { fontSize: 14, color: "#6C757D" },
   username: { fontSize: 24, fontWeight: "700", color: "#001F3F" },
 
@@ -258,128 +200,104 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 16,
     marginBottom: 20,
-    marginHorizontal: 10,
-    marginTop: 10,
   },
-  cardTitle: { color: "#fff", fontSize: 16, marginBottom: 8 },
-  loanAmount: { color: "#FFD700", fontSize: 30, fontWeight: "700" },
+  cardTitle: { color: "#fff", fontSize: 16 },
 
-  row: { flexDirection: "row", justifyContent: "space-between", marginTop: 10 },
-  smallLabel: { color: "#fff" },
-  highlight: { color: "#FFD700", fontWeight: "700" },
-
-  primaryButton: {
-    backgroundColor: "#FFD700",
-    padding: 12,
-    borderRadius: 10,
-    marginTop: 15,
+  loanAmountRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginTop: 6,
   },
-  primaryButtonText: {
-    color: "#001F3F",
+  loanAmount: {
+    color: "#FFD700",
+    fontSize: 32,
     fontWeight: "700",
-    textAlign: "center",
   },
 
-  section: { marginBottom: 25, paddingHorizontal: 10 },
-  sectionTitle: { fontSize: 18, fontWeight: "700", marginBottom: 5 },
-  sectionText: { color: "#6C757D" },
-  sectionAmount: { fontSize: 22, fontWeight: "700", marginVertical: 8 },
-  link: { color: "#001F3F", fontWeight: "700" },
-
-  offersBox: {
-    backgroundColor: "#001F3F",
-    padding: 18,
-    borderRadius: 16,
-    marginBottom: 30,
+  tenureBadge: {
+    backgroundColor: "rgba(255, 215, 0, 0.25)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+    alignItems: "flex-end",
   },
-  offersTitle: { fontSize: 20, fontWeight: "700", color: "#FFD700" },
-  offersDesc: { color: "#fff", marginVertical: 10 },
+  tenureText: { color: "#FFD700", fontSize: 13, fontWeight: "700" },
+  approvalText: { color: "#fff", fontSize: 11, marginTop: 2 },
 
-  buttonRow: {
+  subText: { color: "#fff", fontSize: 12, marginTop: 4 },
+
+  divider: {
+    height: 1,
+    backgroundColor: "rgba(255,255,255,0.3)",
+    marginVertical: 12,
+  },
+
+  /* 🔥 EMI ROW */
+  emiRow: {
     flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  emiText: { color: "#fff", fontSize: 14 },
+  emiAmount: {
+    color: "#FFD700",
+    fontSize: 20,
+    fontWeight: "700",
   },
 
-  statsContainer: { marginBottom: 25, paddingHorizontal: 10 },
+  statsContainer: { marginBottom: 20 },
+  sectionTitle: { fontSize: 18, fontWeight: "700", marginBottom: 8 },
 
-  statsGrid: {
-    flexDirection: "row",
-  },
-
+  statsGrid: { flexDirection: "row" },
   statBox: {
     flex: 1,
     backgroundColor: "#F8F9FA",
-    padding: 18,
+    padding: 16,
     borderRadius: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: "#FFD700",
-    marginRight: 4,
+    marginRight: 6,
   },
-
-  statLabel: { fontSize: 12, color: "#6C757D", marginBottom: 10},
-  statAmount: { fontSize: 18, fontWeight: "700", color: "#001F3F" },
+  statLabel: { fontSize: 12, color: "#6C757D" },
+  statAmount: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#001F3F",
+  },
 
   progressSection: {
     backgroundColor: "#F8F9FA",
     padding: 16,
     borderRadius: 12,
     marginBottom: 20,
-    marginTop:10,
   },
   progressHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 10,
   },
-  progressLabel: { fontSize: 14, fontWeight: "600", color: "#001F3F" },
-  progressPercent: { fontSize: 16, fontWeight: "700", color: "#FFD700" },
-
+  progressLabel: { fontWeight: "600" },
+  progressPercent: { fontWeight: "700", color: "#FFD700" },
   progressBar: {
     height: 10,
     backgroundColor: "#E9ECEF",
     borderRadius: 5,
-    marginBottom: 2,
-   
     overflow: "hidden",
+    marginTop: 6,
   },
-  progressFill: {
-    height: 8,
-    backgroundColor: "#FFD700",
-    borderRadius: 4,
+  progressFill: { height: "100%", backgroundColor: "#FFD700" },
+  progressText: {
+    textAlign: "center",
+    fontSize: 12,
+    color: "#6C757D",
+    marginTop: 6,
   },
-  progressText: { fontSize: 12, color: "#6C757D", textAlign: "center" },
 
-  detailsSection: {
-    marginBottom: 25,
-    paddingHorizontal: 10,
-    backgroundColor: "#F8F9FA",
-    padding: 16,
-    borderRadius: 12,
-  },
-  detailRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 10,
-  },
-  detailLabel: { fontSize: 14, color: "#6C757D" },
-  detailValue: { fontSize: 14, fontWeight: "700", color: "#001F3F" },
-  divider: { height: 1, backgroundColor: "#E9ECEF" },
-
-  secondaryOfferBox: {
-    backgroundColor: "#001F3F",
-    padding: 18,
-    borderRadius: 16,
-    marginBottom: 30,
-    marginHorizontal: 10,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  offerIconBox: { marginRight: 12 },
-  offerTextBox: { flex: 1 },
-  offerNewTitle: {
-    fontSize: 16,
+  section: { marginBottom: 30 },
+  sectionText: { color: "#6C757D" },
+  sectionAmount: {
+    fontSize: 29,
     fontWeight: "700",
-    color: "#FFD700",
-    marginBottom: 4,
+    marginVertical: 6,
   },
-  offerNewDesc: { fontSize: 12, color: "#fff" },
+  link: { color: "#001F3F", fontWeight: "800" },
 });
+  
